@@ -9,6 +9,7 @@ import useCartStore from '../../store/cartStore';
 import useAuthStore from '../../store/authStore';
 import api from '../../services/api';
 import { FullPageLoader } from '../../components/common/Loader';
+import { addToRecentlyViewed } from '../../utils/recentlyViewed';
 
 const TABS = ['Description', 'Size Guide', 'Reviews'];
 
@@ -33,6 +34,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (product?._id) {
+      addToRecentlyViewed(product);
       api.get(`/products/${product._id}/related`).then(({ data }) => {
         const payload = data?.data || data;
         setRelatedProducts(Array.isArray(payload) ? payload : (payload?.products || []));

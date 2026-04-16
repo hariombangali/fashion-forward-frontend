@@ -56,6 +56,7 @@ import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminBannersPage from './pages/admin/AdminBannersPage';
 import AdminThemePage from './pages/admin/AdminThemePage';
 import AdminCouponsPage from './pages/admin/AdminCouponsPage';
+import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 
 // Customer/Public Layout wrapper
 function PublicLayout({ children }) {
@@ -180,6 +181,7 @@ function App() {
           <Route path="banners" element={<AdminBannersPage />} />
           <Route path="theme" element={<ErrorBoundary><AdminThemePage /></ErrorBoundary>} />
           <Route path="coupons" element={<ErrorBoundary><AdminCouponsPage /></ErrorBoundary>} />
+          <Route path="categories" element={<ErrorBoundary><AdminCategoriesPage /></ErrorBoundary>} />
         </Route>
 
         {/* Catch all */}

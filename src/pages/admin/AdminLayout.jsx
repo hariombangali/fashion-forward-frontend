@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   Palette,
   Tag,
+  LayoutGrid,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import useAdminStore from '../../store/adminStore';
@@ -23,6 +24,7 @@ import useAdminStore from '../../store/adminStore';
 const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/admin/products', icon: Package, label: 'Products' },
+  { to: '/admin/categories', icon: LayoutGrid, label: 'Categories' },
   { to: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
   { to: '/admin/customers', icon: Users, label: 'Customers' },
   { to: '/admin/wholesalers', icon: Building, label: 'Wholesalers' },

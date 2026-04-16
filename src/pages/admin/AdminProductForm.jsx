@@ -342,33 +342,42 @@ export default function AdminProductForm() {
             />
           </div>
           {(existingImages.length > 0 || images.length > 0) && (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 mt-3">
               {existingImages.map((url, idx) => (
-                <div key={`ex-${idx}`} className="relative group">
-                  <img src={url} alt="" className="w-20 h-20 rounded-lg object-cover border border-gray-200" />
+                <div key={`ex-${idx}`} className="relative">
+                  <img
+                    src={url}
+                    alt={`Product ${idx + 1}`}
+                    className="w-24 h-24 rounded-xl object-cover border-2 border-gray-200 bg-gray-100"
+                    onError={(e) => { e.target.src = 'https://via.placeholder.com/200?text=Broken'; }}
+                  />
                   <button
                     type="button"
                     onClick={() => removeExistingImage(idx)}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"
+                    title="Remove image"
                   >
-                    <X size={12} />
+                    <X size={14} />
                   </button>
+                  <span className="absolute bottom-1 left-1 text-[8px] bg-black/60 text-white px-1 rounded">Old</span>
                 </div>
               ))}
               {images.map((file, idx) => (
-                <div key={`new-${idx}`} className="relative group">
+                <div key={`new-${idx}`} className="relative">
                   <img
                     src={URL.createObjectURL(file)}
-                    alt=""
-                    className="w-20 h-20 rounded-lg object-cover border border-blue-200"
+                    alt={`New ${idx + 1}`}
+                    className="w-24 h-24 rounded-xl object-cover border-2 border-green-300 bg-gray-100"
                   />
                   <button
                     type="button"
                     onClick={() => removeNewImage(idx)}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"
+                    title="Remove image"
                   >
-                    <X size={12} />
+                    <X size={14} />
                   </button>
+                  <span className="absolute bottom-1 left-1 text-[8px] bg-green-600 text-white px-1 rounded">New</span>
                 </div>
               ))}
             </div>

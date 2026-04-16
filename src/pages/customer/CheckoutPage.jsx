@@ -28,7 +28,7 @@ const STEPS = [
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user, addAddress, fetchUser } = useAuthStore();
-  const { items, subtotal, shippingCharge, total, fetchCart } = useCartStore();
+  const { items, subtotal, shippingCharge, total, appliedCoupon, discount, finalTotal, fetchCart, removeCoupon } = useCartStore();
   const { createOrder, loading: orderLoading } = useOrderStore();
 
   const [step, setStep] = useState(1);
@@ -91,7 +91,9 @@ export default function CheckoutPage() {
           state: addressObj.state,
           pincode: addressObj.pincode,
         },
+        ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}),
       });
+      removeCoupon();
       navigate(`/order-success/${order._id}`);
     } catch {
       // handled by store
@@ -265,7 +267,13 @@ export default function CheckoutPage() {
             <div className="border-t pt-4 mt-4 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>₹{subtotal}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Shipping</span><span>{shippingCharge === 0 ? 'Free' : `₹${shippingCharge}`}</span></div>
-              <div className="flex justify-between text-base font-bold border-t pt-2"><span>Total</span><span>₹{total}</span></div>
+              {discount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount ({appliedCoupon?.code})</span>
+                  <span>-₹{discount}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-base font-bold border-t pt-2"><span>Total</span><span>₹{finalTotal || total}</span></div>
             </div>
             <div className="mt-6 flex justify-between">
               <button onClick={() => setStep(1)} className="px-6 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition">
@@ -293,7 +301,13 @@ export default function CheckoutPage() {
             <div className="border-t mt-6 pt-4 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>₹{subtotal}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Shipping</span><span>{shippingCharge === 0 ? 'Free' : `₹${shippingCharge}`}</span></div>
-              <div className="flex justify-between text-lg font-bold border-t pt-2"><span>Total (COD)</span><span>₹{total}</span></div>
+              {discount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount ({appliedCoupon?.code})</span>
+                  <span>-₹{discount}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-lg font-bold border-t pt-2"><span>Total (COD)</span><span>₹{finalTotal || total}</span></div>
             </div>
 
             <div className="mt-6 flex justify-between">

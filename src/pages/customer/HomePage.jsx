@@ -5,11 +5,12 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination, EffectFade, Navigation } from 'swiper/modules';
 import {
   Truck, Wallet, MapPin, ShieldCheck, ArrowRight, Sparkles,
-  TrendingUp, Star, ChevronRight, Tag, Heart,
+  TrendingUp, Star, ChevronRight, Tag, Heart, Clock, X,
 } from 'lucide-react';
 import useProductStore from '../../store/productStore';
 import api from '../../services/api';
 import FlashSaleBanner from '../../components/common/FlashSaleBanner';
+import { getRecentlyViewed, clearRecentlyViewed } from '../../utils/recentlyViewed';
 import 'swiper/css';
 import 'swiper/css/effect-fade';
 import 'swiper/css/pagination';
@@ -104,77 +105,95 @@ function ProductCard({ product, index = 0 }) {
 }
 
 /* ============================================================
-   CATEGORY GRID — premium bento-box style with unique styles per category
+   RECENTLY VIEWED PRODUCT CARD — compact portrait card
    ============================================================ */
-const CATEGORY_STYLES = {
-  Kurti: {
-    emoji: '👗', gradient: 'from-pink-500 via-rose-400 to-orange-300',
-    bg: 'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=600&q=75',
-    tag: 'Bestseller',
-  },
-  Saree: {
-    emoji: '🥻', gradient: 'from-fuchsia-600 via-pink-500 to-red-400',
-    bg: 'https://images.unsplash.com/photo-1610189044667-b24c1a3d3bd7?w=600&q=75',
-    tag: 'Festive',
-  },
-  'Suit Set': {
-    emoji: '✨', gradient: 'from-violet-600 via-purple-500 to-indigo-500',
-    bg: 'https://images.unsplash.com/photo-1617059062149-c99b5c1a6e64?w=600&q=75',
-    tag: 'Ethnic',
-  },
-  Lehenga: {
-    emoji: '💃', gradient: 'from-rose-600 via-pink-600 to-fuchsia-500',
-    bg: 'https://images.unsplash.com/photo-1594736797933-d0d3085cf6ad?w=600&q=75',
-    tag: 'Bridal',
-  },
-  Shirt: {
-    emoji: '👔', gradient: 'from-sky-600 via-blue-500 to-indigo-500',
-    bg: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&q=75',
-    tag: 'Office',
-  },
-  'T-Shirt': {
-    emoji: '👕', gradient: 'from-teal-500 via-cyan-500 to-blue-500',
-    bg: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=75',
-    tag: 'Casual',
-  },
-  'Jeans & Trousers': {
-    emoji: '👖', gradient: 'from-slate-700 via-blue-700 to-indigo-700',
-    bg: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&q=75',
-    tag: 'Denim',
-  },
-  Dress: {
-    emoji: '👗', gradient: 'from-amber-500 via-orange-500 to-red-500',
-    bg: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=600&q=75',
-    tag: 'Western',
-  },
-  'Kids Wear': {
-    emoji: '🧒', gradient: 'from-yellow-400 via-orange-400 to-pink-400',
-    bg: 'https://images.unsplash.com/photo-1519457431-44ccd64a579b?w=600&q=75',
-    tag: 'Little Stars',
-  },
-  'Dupatta & Stole': {
-    emoji: '🧣', gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
-    bg: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&q=75',
-    tag: 'Accessory',
-  },
-};
+function RecentProductCard({ product, index = 0 }) {
+  const price = product.retailPrice ?? 0;
+  const mrp = product.retailMRP ?? 0;
+  const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
-const DEFAULT_STYLE = {
-  emoji: '🛍️',
-  gradient: 'from-indigo-500 via-purple-500 to-pink-500',
-  bg: null,
-  tag: 'Explore',
-};
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, margin: '-30px' }}
+      transition={{ duration: 0.35, delay: index * 0.05 }}
+      whileHover={{ y: -5 }}
+      className="flex-shrink-0 w-36 md:w-auto snap-start group"
+    >
+      <Link to={`/product/${product.slug || product._id}`} className="block">
+        <div className="relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-shadow overflow-hidden border border-gray-100">
+          {/* Discount badge */}
+          {discount > 0 && (
+            <div className="absolute top-2 left-2 z-10 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              -{discount}%
+            </div>
+          )}
+
+          {/* Clock badge — top right */}
+          <div className="absolute top-2 right-2 z-10 w-6 h-6 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-sm">
+            <Clock className="w-3 h-3 text-purple-500" />
+          </div>
+
+          {/* Image */}
+          <div className="aspect-[3/4] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+            <img
+              src={product.images?.[0] || 'https://via.placeholder.com/300x400?text=No+Image'}
+              alt={product.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              onError={(e) => { e.target.src = 'https://via.placeholder.com/300x400?text=No+Image'; }}
+            />
+          </div>
+
+          {/* Info */}
+          <div className="p-2.5">
+            {product.category?.name && (
+              <p className="text-[9px] font-bold uppercase tracking-widest text-purple-500 mb-0.5 truncate">
+                {product.category.name}
+              </p>
+            )}
+            <p className="text-xs font-semibold text-gray-900 truncate leading-tight mb-1.5 group-hover:text-indigo-600 transition-colors">
+              {product.name}
+            </p>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-sm font-bold text-gray-900">₹{price}</span>
+              {discount > 0 && (
+                <span className="text-[10px] text-gray-400 line-through">₹{mrp}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+}
+
+/* ============================================================
+   CATEGORY GRID — clean cards, admin-uploaded images only
+   ============================================================ */
+
+// Tasteful fashion-toned gradients used when admin hasn't uploaded an image
+const CAT_GRADIENTS = [
+  'from-rose-700 to-pink-800',
+  'from-violet-700 to-purple-900',
+  'from-indigo-700 to-blue-900',
+  'from-fuchsia-700 to-violet-900',
+  'from-pink-700 to-rose-900',
+  'from-purple-700 to-indigo-900',
+  'from-teal-700 to-emerald-900',
+  'from-amber-700 to-orange-900',
+];
 
 function CategoryGrid({ categoryList }) {
-  const getStyle = (name) => CATEGORY_STYLES[name] || DEFAULT_STYLE;
+  // Only show categories with at least 1 product
+  const visible = categoryList.filter((c) => (c.productCount ?? 0) > 0);
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
-      {categoryList.map((cat, i) => {
-        const style = getStyle(cat.name);
-        // First tile is featured (larger) on desktop
+      {visible.map((cat, i) => {
         const isFeatured = i === 0;
+        const gradient = CAT_GRADIENTS[i % CAT_GRADIENTS.length];
+
         return (
           <motion.div
             key={cat._id || cat.name}
@@ -187,67 +206,49 @@ function CategoryGrid({ categoryList }) {
           >
             <Link
               to={`/shop?category=${cat.slug || cat.name}`}
-              className={`group relative block overflow-hidden rounded-2xl md:rounded-3xl shadow-sm hover:shadow-2xl transition-all ${
+              className={`group relative block overflow-hidden rounded-2xl md:rounded-3xl shadow-md hover:shadow-2xl transition-all duration-300 ${
                 isFeatured ? 'aspect-[1/1.1] md:aspect-auto md:h-full' : 'aspect-[4/5]'
               }`}
             >
-              {/* Background — product image OR category-specific gradient */}
+              {/* Background: admin-uploaded image OR gradient */}
               {cat.image ? (
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.2s] ease-out"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.1s] ease-out"
                 />
-              ) : style.bg ? (
-                <img
-                  src={style.bg}
-                  alt={cat.name}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.2s] ease-out"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-              ) : null}
+              ) : (
+                <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
+              )}
 
-              {/* Gradient overlay — always present */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${style.gradient} mix-blend-multiply opacity-70 group-hover:opacity-60 transition-opacity`} />
+              {/* Cinematic dark gradient at bottom for text */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
 
-              {/* Bottom dark gradient for text legibility */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-              {/* Top-left emoji badge */}
-              <div className="absolute top-3 left-3 md:top-4 md:left-4">
-                <div className="w-11 h-11 md:w-14 md:h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-2xl md:text-3xl shadow-lg group-hover:rotate-12 transition-transform duration-300">
-                  {style.emoji}
+              {/* Product count badge — top right */}
+              {cat.productCount > 0 && (
+                <div className="absolute top-3 right-3 md:top-4 md:right-4">
+                  <span className="inline-block bg-white/20 backdrop-blur-md border border-white/30 text-white text-[9px] md:text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                    {cat.productCount} item{cat.productCount !== 1 ? 's' : ''}
+                  </span>
                 </div>
-              </div>
+              )}
 
-              {/* Top-right tag */}
-              <div className="absolute top-3 right-3 md:top-4 md:right-4">
-                <span className="inline-block bg-white/20 backdrop-blur-md border border-white/30 text-white text-[9px] md:text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                  {style.tag}
-                </span>
-              </div>
-
-              {/* Bottom content */}
+              {/* Bottom text */}
               <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
-                <h3 className={`text-white font-extrabold drop-shadow-xl mb-1 ${isFeatured ? 'text-xl md:text-3xl' : 'text-base md:text-lg'}`}>
+                <h3 className={`text-white font-extrabold leading-tight drop-shadow mb-1.5 ${
+                  isFeatured ? 'text-xl md:text-3xl' : 'text-base md:text-xl'
+                }`}>
                   {cat.name}
                 </h3>
-                <div className="inline-flex items-center gap-1 text-white/90 text-xs font-semibold group-hover:gap-2 transition-all">
-                  <span className="underline decoration-white/40 underline-offset-2">
-                    Shop now
-                  </span>
+                <div className="inline-flex items-center gap-1 text-white/80 text-xs font-semibold group-hover:gap-2.5 transition-all duration-200">
+                  <span>Shop now</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </div>
               </div>
 
-              {/* Hover shine effect */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-                <div className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] bg-gradient-to-br from-white/0 via-white/20 to-white/0 rotate-45 translate-x-full group-hover:translate-x-[-100%] transition-transform duration-1000" />
+              {/* Hover shine sweep */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none overflow-hidden rounded-2xl md:rounded-3xl">
+                <div className="absolute -top-full -left-full w-[200%] h-[200%] bg-gradient-to-br from-white/0 via-white/10 to-white/0 rotate-45 group-hover:translate-x-full group-hover:translate-y-full transition-transform duration-700" />
               </div>
             </Link>
           </motion.div>
@@ -260,10 +261,12 @@ function CategoryGrid({ categoryList }) {
 export default function HomePage() {
   const { categories, products, loading, fetchCategories, fetchFeaturedProducts } = useProductStore();
   const [banners, setBanners] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
 
   useEffect(() => {
     fetchCategories();
     fetchFeaturedProducts();
+    setRecentlyViewed(getRecentlyViewed());
     // Fetch active homepage banners from admin
     api.get('/banners?placement=home-hero')
       .then(({ data }) => {
@@ -426,6 +429,10 @@ export default function HomePage() {
               <div key={i} className="aspect-[4/5] bg-gray-100 animate-pulse rounded-2xl" />
             ))}
           </div>
+        ) : categoryList.filter((c) => (c.productCount ?? 0) > 0).length === 0 ? (
+          <div className="text-center py-12 text-gray-400">
+            <p>No categories with products yet.</p>
+          </div>
         ) : (
           <CategoryGrid categoryList={categoryList} />
         )}
@@ -468,6 +475,48 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      {/* ===== RECENTLY VIEWED ===== */}
+      {recentlyViewed.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 py-10 md:py-14">
+          {/* Header */}
+          <motion.div {...fadeInUp} className="flex items-end justify-between mb-8">
+            <div>
+              <span className="text-sm font-semibold uppercase tracking-widest text-purple-600 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Your History
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-1">
+                Recently Viewed
+              </h2>
+            </div>
+            <button
+              onClick={() => { clearRecentlyViewed(); setRecentlyViewed([]); }}
+              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <X className="w-4 h-4" />
+              Clear
+            </button>
+          </motion.div>
+
+          {/* Horizontal scroll on mobile, grid on desktop */}
+          <div className="relative">
+            {/* Mobile: horizontal scrollable row */}
+            <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide md:hidden">
+              {recentlyViewed.map((product, i) => (
+                <RecentProductCard key={product._id} product={product} index={i} />
+              ))}
+            </div>
+
+            {/* Desktop: grid (max 5 cols, max 10 items) */}
+            <div className="hidden md:grid grid-cols-3 lg:grid-cols-5 gap-4">
+              {recentlyViewed.slice(0, 10).map((product, i) => (
+                <RecentProductCard key={product._id} product={product} index={i} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ===== WHOLESALE CTA BANNER ===== */}
       <section className="max-w-7xl mx-auto px-4 py-10 md:py-16">
