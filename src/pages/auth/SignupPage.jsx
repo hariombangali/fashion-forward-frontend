@@ -6,6 +6,7 @@ import { UserPlus, Mail, Lock, Eye, EyeOff, User, Phone, Building, MapPin, FileT
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import useAuthStore from '../../store/authStore';
+import useSettingsStore from '../../store/settingsStore';
 import api from '../../services/api';
 
 const customerSchema = z
@@ -40,6 +41,8 @@ const wholesalerSchema = z
 export default function SignupPage() {
   const navigate = useNavigate();
   const { register: registerUser, loading } = useAuthStore();
+  const { settings } = useSettingsStore();
+  const storeName = settings?.storeName || 'Fashion Forward';
   const [role, setRole] = useState('customer');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -154,11 +157,19 @@ export default function SignupPage() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-indigo-100 mb-4">
-              <UserPlus className="w-7 h-7 text-indigo-600" />
-            </div>
+            {settings?.logoUrl ? (
+              <img
+                src={settings.logoUrl}
+                alt={storeName}
+                className="inline-block h-14 w-auto object-contain mb-4"
+              />
+            ) : (
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-indigo-100 mb-4">
+                <UserPlus className="w-7 h-7 text-indigo-600" />
+              </div>
+            )}
             <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-            <p className="text-gray-500 mt-1">Join Fashion Forward today</p>
+            <p className="text-gray-500 mt-1">Join {storeName} today</p>
           </div>
 
           {/* Role Selector */}

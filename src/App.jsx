@@ -12,6 +12,7 @@ import AnnouncementBar from './components/common/AnnouncementBar';
 import LiveNotifications from './components/common/LiveNotifications';
 import FloatingContact from './components/common/FloatingContact';
 import useSettingsStore from './store/settingsStore';
+import ThemeApplicator from './components/common/ThemeApplicator';
 import AdminLayout from './pages/admin/AdminLayout';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -99,6 +100,7 @@ function App() {
         }}
       />
 
+      <ThemeApplicator />
       <Routes>
         {/* Auth Routes (no navbar/footer) */}
         <Route path="/login" element={<LoginPage />} />

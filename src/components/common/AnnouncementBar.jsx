@@ -32,12 +32,11 @@ const AnnouncementBar = () => {
     sessionStorage.setItem('ff_announcement_dismissed', '1');
   };
 
-  const gradient = announcement.bgGradient || 'from-indigo-600 via-purple-600 to-pink-500';
   const textColor = announcement.textColor || 'text-white';
   const message = messages[currentMsg];
 
   return (
-    <div className={`relative bg-gradient-to-r ${gradient} ${textColor} overflow-hidden`}>
+    <div className={`relative bg-announcement-gradient ${textColor} overflow-hidden`}>
       {/* Animated shimmer background */}
       <div className="absolute inset-0 bg-[length:20px_20px] bg-[linear-gradient(-45deg,transparent_25%,rgba(255,255,255,0.05)_25%,rgba(255,255,255,0.05)_50%,transparent_50%,transparent_75%,rgba(255,255,255,0.05)_75%)] animate-stripe" />
 

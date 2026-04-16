@@ -1,20 +1,22 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Palette, Megaphone, Zap, Phone, Bell, Save, Upload, X, Plus, Trash2, Eye,
-  Globe, MapPin, Mail, MessageCircle, Truck,
-  Loader2,
+  Palette, Megaphone, Zap, Phone, Bell, Save, Upload, X, Plus, Trash2,
+  Globe, MapPin, Mail, MessageCircle, Truck, Type, Moon,
+  Loader2, Check,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 import ToggleSwitch from '../../components/common/ToggleSwitch';
 import useSettingsStore from '../../store/settingsStore';
+import { HEADING_FONTS, BODY_FONTS } from '../../components/common/ThemeApplicator';
 
 const TABS = [
-  { key: 'branding', label: 'Branding', icon: Palette },
+  { key: 'appearance', label: 'Appearance', icon: Type },
+  { key: 'branding',   label: 'Branding',   icon: Palette },
   { key: 'announcement', label: 'Announcement', icon: Megaphone },
-  { key: 'flashSale', label: 'Flash Sale', icon: Zap },
-  { key: 'contact', label: 'Contact', icon: Phone },
+  { key: 'flashSale',  label: 'Flash Sale',  icon: Zap },
+  { key: 'contact',    label: 'Contact',     icon: Phone },
   { key: 'notifications', label: 'Notifications', icon: Bell },
 ];
 
@@ -72,6 +74,11 @@ const DEFAULT_SETTINGS = {
     gradientVia: 'via-purple-500',
     gradientTo: 'to-fuchsia-500',
   },
+  typography: {
+    headingFont: 'Inter',
+    bodyFont: 'Inter',
+  },
+  darkModeDefault: false,
   announcement: {
     enabled: false,
     messages: [''],
@@ -121,6 +128,8 @@ export default function AdminThemePage() {
         ...DEFAULT_SETTINGS,
         ...s,
         theme: { ...DEFAULT_SETTINGS.theme, ...s?.theme },
+        typography: { ...DEFAULT_SETTINGS.typography, ...s?.typography },
+        darkModeDefault: s?.darkModeDefault ?? false,
         announcement: {
           ...DEFAULT_SETTINGS.announcement,
           ...s?.announcement,
@@ -228,7 +237,7 @@ export default function AdminThemePage() {
       <div>
         <h2 className="text-xl font-bold text-gray-900">Theme Customizer</h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          Customize branding, announcements, flash sales, contact info, and notifications
+          Customize fonts, colors, dark mode, branding, announcements, flash sales, and more
         </p>
       </div>
 
@@ -259,6 +268,252 @@ export default function AdminThemePage() {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
         >
+          {/* ─── Appearance ─── */}
+          {activeTab === 'appearance' && (
+            <div className="space-y-5">
+
+              {/* ── Typography ── */}
+              <div className="bg-white rounded-xl shadow-sm p-5 space-y-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <Type size={18} className="text-indigo-600" />
+                  <h3 className="text-base font-semibold text-gray-800">Typography</h3>
+                </div>
+                <p className="text-xs text-gray-500 -mt-4">
+                  Choose fonts for headings and body text. Changes apply site-wide instantly.
+                </p>
+
+                {/* Heading font */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Heading Font
+                    <span className="ml-2 text-xs font-normal text-gray-400">used in titles, product names, section headers</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {HEADING_FONTS.map((font) => {
+                      const active = settings.typography.headingFont === font.name;
+                      return (
+                        <button
+                          key={font.name}
+                          type="button"
+                          onClick={() => updateField('typography.headingFont', font.name)}
+                          className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 text-left transition-all ${
+                            active
+                              ? 'border-indigo-500 bg-indigo-50'
+                              : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div>
+                            <p
+                              className="font-semibold text-gray-900 text-base"
+                              style={{ fontFamily: `'${font.name}', serif` }}
+                            >
+                              {font.name}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">{font.label.split(' — ')[1]}</p>
+                          </div>
+                          {active && <Check size={16} className="text-indigo-600 flex-shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Live heading preview */}
+                  <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-indigo-50 border border-gray-100">
+                    <p className="text-xs text-gray-400 uppercase tracking-widest mb-2 font-semibold">Preview</p>
+                    <p
+                      className="text-2xl font-bold text-gray-900"
+                      style={{ fontFamily: `'${settings.typography.headingFont}', serif` }}
+                    >
+                      Fashion Forward
+                    </p>
+                    <p
+                      className="text-lg text-gray-600 mt-1"
+                      style={{ fontFamily: `'${settings.typography.headingFont}', serif` }}
+                    >
+                      Curating your style since 2024
+                    </p>
+                  </div>
+                </div>
+
+                {/* Body font */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Body Font
+                    <span className="ml-2 text-xs font-normal text-gray-400">used in descriptions, paragraphs, UI text</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {BODY_FONTS.map((font) => {
+                      const active = settings.typography.bodyFont === font.name;
+                      return (
+                        <button
+                          key={font.name}
+                          type="button"
+                          onClick={() => updateField('typography.bodyFont', font.name)}
+                          className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 text-left transition-all ${
+                            active
+                              ? 'border-indigo-500 bg-indigo-50'
+                              : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div>
+                            <p
+                              className="font-medium text-gray-900"
+                              style={{ fontFamily: `'${font.name}', sans-serif` }}
+                            >
+                              {font.name}
+                            </p>
+                            <p
+                              className="text-xs text-gray-400 mt-0.5"
+                              style={{ fontFamily: `'${font.name}', sans-serif` }}
+                            >
+                              The quick brown fox jumps over the lazy dog
+                            </p>
+                          </div>
+                          {active && <Check size={16} className="text-indigo-600 flex-shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Live body preview */}
+                  <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-pink-50 border border-gray-100">
+                    <p className="text-xs text-gray-400 uppercase tracking-widest mb-2 font-semibold">Preview</p>
+                    <p
+                      className="text-sm text-gray-700 leading-relaxed"
+                      style={{ fontFamily: `'${settings.typography.bodyFont}', sans-serif` }}
+                    >
+                      Discover our latest collection of premium fashion. From elegant sarees to
+                      contemporary western wear — curated for every occasion and every style.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Colors ── */}
+              <div className="bg-white rounded-xl shadow-sm p-5 space-y-5">
+                <div className="flex items-center gap-2">
+                  <Palette size={18} className="text-indigo-600" />
+                  <h3 className="text-base font-semibold text-gray-800">Brand Colors</h3>
+                </div>
+                <p className="text-xs text-gray-500 -mt-3">
+                  Primary color is used in buttons, links, and key highlights. Accent drives badges, hovers, and secondary elements.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {[
+                    { label: 'Primary Color', field: 'theme.primaryColor', key: 'primaryColor', desc: 'Buttons, links, focus rings' },
+                    { label: 'Accent Color',  field: 'theme.accentColor',  key: 'accentColor',  desc: 'Badges, hover effects, highlights' },
+                  ].map(({ label, field, key, desc }) => (
+                    <div key={key}>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
+                      <p className="text-xs text-gray-400 mb-3">{desc}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <input
+                            type="color"
+                            value={settings.theme[key]}
+                            onChange={(e) => updateField(field, e.target.value)}
+                            className="w-14 h-14 rounded-xl border-2 border-gray-200 cursor-pointer p-1 bg-transparent"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={settings.theme[key]}
+                            onChange={(e) => updateField(field, e.target.value)}
+                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 outline-none"
+                          />
+                          {/* Swatch row */}
+                          <div className="flex gap-1.5 mt-2">
+                            {['#4f46e5','#7c3aed','#ec4899','#f59e0b','#10b981','#ef4444','#0ea5e9','#1d4ed8'].map((c) => (
+                              <button
+                                key={c}
+                                type="button"
+                                onClick={() => updateField(field, c)}
+                                className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${
+                                  settings.theme[key] === c ? 'border-gray-700 scale-110' : 'border-transparent'
+                                }`}
+                                style={{ background: c }}
+                                title={c}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Color preview bar */}
+                <div className="mt-2 rounded-xl overflow-hidden h-12 flex">
+                  <div className="flex-1" style={{ background: settings.theme.primaryColor }} />
+                  <div className="flex-1" style={{ background: `linear-gradient(135deg, ${settings.theme.primaryColor}, ${settings.theme.accentColor})` }} />
+                  <div className="flex-1" style={{ background: settings.theme.accentColor }} />
+                </div>
+                <p className="text-xs text-gray-400">Primary → Gradient blend → Accent</p>
+              </div>
+
+              {/* ── Dark Mode Default ── */}
+              <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Moon size={18} className="text-indigo-600" />
+                  <h3 className="text-base font-semibold text-gray-800">Dark Mode</h3>
+                </div>
+
+                <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-slate-50 to-indigo-50 border border-slate-200">
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">Default Mode for All Visitors</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      This sets the <strong>site-wide default</strong>. Individual users can still override it
+                      using the moon/sun toggle in the navbar — their preference is saved in their browser.
+                    </p>
+                  </div>
+                  <ToggleSwitch
+                    isOn={settings.darkModeDefault}
+                    onToggle={() => updateField('darkModeDefault', !settings.darkModeDefault)}
+                    labelOn="Dark"
+                    labelOff="Light"
+                    size="sm"
+                  />
+                </div>
+
+                {/* Mode preview */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div
+                    onClick={() => updateField('darkModeDefault', false)}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      !settings.darkModeDefault ? 'border-indigo-500' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="bg-white rounded-lg p-3 border border-gray-200 mb-2">
+                      <div className="h-2 bg-gray-300 rounded w-3/4 mb-1.5" />
+                      <div className="h-2 bg-gray-200 rounded w-1/2" />
+                    </div>
+                    <p className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                      {!settings.darkModeDefault && <Check size={12} className="text-indigo-600" />}
+                      ☀️ Light Mode
+                    </p>
+                  </div>
+                  <div
+                    onClick={() => updateField('darkModeDefault', true)}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      settings.darkModeDefault ? 'border-indigo-500' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="bg-slate-800 rounded-lg p-3 border border-slate-700 mb-2">
+                      <div className="h-2 bg-slate-600 rounded w-3/4 mb-1.5" />
+                      <div className="h-2 bg-slate-700 rounded w-1/2" />
+                    </div>
+                    <p className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                      {settings.darkModeDefault && <Check size={12} className="text-indigo-600" />}
+                      🌙 Dark Mode
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ─── Branding ─── */}
           {activeTab === 'branding' && (
             <div className="bg-white rounded-xl shadow-sm p-5 space-y-5">

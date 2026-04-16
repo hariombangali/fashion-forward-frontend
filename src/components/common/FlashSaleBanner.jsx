@@ -77,11 +77,9 @@ export default function FlashSaleBanner() {
   const { expired } = getTimeLeft(endsAt);
   if (expired) return null;
 
-  const gradient = flashSale.bgGradient || 'from-rose-500 via-red-500 to-orange-500';
-
   return (
     <section className="max-w-7xl mx-auto px-4 py-6 md:py-8">
-      <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-r ${gradient} p-5 md:p-8 shadow-xl`}>
+      <div className="relative overflow-hidden rounded-2xl bg-flash-gradient p-5 md:p-8 shadow-xl">
         {/* Decorative */}
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
