@@ -381,15 +381,6 @@ const Navbar = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 md:h-[68px] items-center justify-between gap-4">
 
-            {/* Hamburger — mobile only */}
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="md:hidden p-2 rounded-full text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 transition"
-              aria-label="Open menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
             {/* ── Logo ──────────────────────────────────────────── */}
             <Link to="/" className="flex-shrink-0 flex items-center gap-2.5">
               {logoUrl ? (
@@ -458,6 +449,15 @@ const Navbar = () => {
                 <Search className="w-5 h-5" />
               </button>
 
+              {/* Hamburger — mobile only, right side */}
+              <button
+                onClick={() => setMobileOpen(true)}
+                className="md:hidden p-2.5 rounded-full text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 transition"
+                aria-label="Open menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+
               {/* Wishlist — desktop */}
               <Link
                 to="/wishlist"
@@ -467,10 +467,10 @@ const Navbar = () => {
                 <Heart className="w-5 h-5" />
               </Link>
 
-              {/* Cart */}
+              {/* Cart — desktop only (mobile uses bottom nav) */}
               <Link
                 to="/cart"
-                className="p-2.5 rounded-full text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200 relative"
+                className="hidden md:flex p-2.5 rounded-full text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200 relative"
                 aria-label="Cart"
               >
                 <ShoppingCart className="w-5 h-5" />
