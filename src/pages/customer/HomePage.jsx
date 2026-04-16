@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination, EffectFade, Navigation } from 'swiper/modules';
 import {
   Truck, Wallet, MapPin, ShieldCheck, ArrowRight, Sparkles,
   TrendingUp, Star, ChevronRight, Tag, Heart, Clock, X,
+  ChevronDown, Award, Zap, Gift,
 } from 'lucide-react';
 import useProductStore from '../../store/productStore';
 import api from '../../services/api';
 import FlashSaleBanner from '../../components/common/FlashSaleBanner';
 import { getRecentlyViewed, clearRecentlyViewed } from '../../utils/recentlyViewed';
+import { FadeIn, SlideUp, Stagger, StaggerItem, AnimatedHeadline, CountUp, Tilt } from '../../components/common/Motion';
 import 'swiper/css';
 import 'swiper/css/effect-fade';
 import 'swiper/css/pagination';
@@ -324,14 +326,17 @@ export default function HomePage() {
                     className={`absolute inset-0 w-full h-full ${fitClass} ${posClass}`}
                   />
                 )}
-                {/* Decorative shapes (only when no image) */}
+                {/* Decorative floating blobs (only when no image) */}
                 {!slide.imageUrl && (
                   <>
-                    <div className="absolute -top-20 -left-20 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-                    <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-white/20 rounded-full blur-3xl" />
+                    <div className="absolute -top-20 -left-20 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-float" />
+                    <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-white/20 rounded-full blur-3xl animate-float-slow" />
+                    <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-white/10 animate-blob" />
                     <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Cdefs%3E%3Cpattern id=%22a%22 width=%2240%22 height=%2240%22 patternUnits=%22userSpaceOnUse%22%3E%3Cpath d=%22M0 40V0h40%22 fill=%22none%22 stroke=%22white%22 stroke-opacity=%220.05%22/%3E%3C/pattern%3E%3C/defs%3E%3Crect width=%22100%22 height=%22100%22 fill=%22url(%23a)%22/%3E%3C/svg%3E')] opacity-40" />
                   </>
                 )}
+                {/* Shimmer light sweep — adds gloss feel over any hero */}
+                <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/0 via-white/5 to-white/0 mix-blend-overlay" />
                 {/* Dark overlay — opacity controlled by admin */}
                 {slide.imageUrl && (
                   <div className="absolute inset-0 bg-black" style={{ opacity: overlayOpacity }} />
@@ -356,21 +361,37 @@ export default function HomePage() {
                         {slide.subtitle}
                       </motion.div>
                     )}
-                    <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold leading-tight mb-3 md:mb-4 drop-shadow-lg">
-                      {slide.title}
-                    </h1>
+                    <AnimatedHeadline
+                      key={`h-${slide._id || idx}-${slide.title}`}
+                      text={slide.title}
+                      as="h1"
+                      className="text-4xl sm:text-5xl md:text-7xl font-extrabold leading-tight mb-3 md:mb-4 drop-shadow-lg"
+                    />
                     {(slide.description || slide.desc) && (
-                      <p className="text-base sm:text-lg md:text-xl mb-6 md:mb-8 text-white/90 max-w-md drop-shadow">
+                      <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5, duration: 0.7 }}
+                        className="text-base sm:text-lg md:text-xl mb-6 md:mb-8 text-white/90 max-w-md drop-shadow"
+                      >
                         {slide.description || slide.desc}
-                      </p>
+                      </motion.p>
                     )}
-                    <Link
-                      to={slide.ctaLink || slide.link || '/shop'}
-                      className="inline-flex items-center gap-2 bg-white text-gray-900 px-6 sm:px-8 py-3 sm:py-3.5 rounded-full font-semibold hover:bg-gray-100 transition-all hover:gap-3 shadow-lg text-sm sm:text-base"
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.7, duration: 0.6 }}
+                      className="flex items-center gap-4"
                     >
-                      {slide.ctaText || slide.cta || 'Shop Now'}
-                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </Link>
+                      <Link
+                        to={slide.ctaLink || slide.link || '/shop'}
+                        className="btn-magnetic group inline-flex items-center gap-2 bg-white text-gray-900 px-6 sm:px-8 py-3 sm:py-3.5 rounded-full font-semibold shadow-lg text-sm sm:text-base"
+                      >
+                        <Sparkles className="w-4 h-4 text-pink-500 group-hover:animate-wiggle" />
+                        {slide.ctaText || slide.cta || 'Shop Now'}
+                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </motion.div>
                   </motion.div>
                 </div>
               </div>
@@ -378,31 +399,67 @@ export default function HomePage() {
             );
           })}
         </Swiper>
+
+        {/* Scroll-down indicator — subtle mouse-wheel hint under hero */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2, duration: 0.6 }}
+          className="absolute bottom-5 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-1 text-white/80 pointer-events-none z-20"
+        >
+          <span className="text-[10px] uppercase tracking-[0.25em] font-semibold">Scroll</span>
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+            className="w-6 h-10 rounded-full border-2 border-white/60 flex items-start justify-center p-1.5"
+          >
+            <span className="w-1 h-2 rounded-full bg-white" />
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* ===== TRUST BADGES STRIP ===== */}
-      <section className="bg-gradient-to-r from-indigo-50 via-white to-purple-50 border-y border-gray-100">
+      <section className="bg-gradient-to-r from-indigo-50 via-white to-purple-50 border-y border-gray-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {trustBadges.map(({ icon: Icon, title, desc }, i) => (
-              <motion.div
-                key={title}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="flex items-center gap-3"
-              >
-                <div className="w-11 h-11 bg-white rounded-xl shadow-sm flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-5 h-5 text-indigo-600" />
+          <Stagger className="grid grid-cols-2 md:grid-cols-4 gap-4" staggerChildren={0.12}>
+            {trustBadges.map(({ icon: Icon, title, desc }) => (
+              <StaggerItem key={title}>
+                <div className="group flex items-center gap-3 p-2 rounded-xl transition-all duration-300 hover:bg-white hover:shadow-md cursor-default">
+                  <div className="w-11 h-11 bg-white rounded-xl shadow-sm flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:bg-brand-gradient group-hover:scale-110 group-hover:rotate-[-6deg]">
+                    <Icon className="w-5 h-5 text-indigo-600 transition-colors duration-300 group-hover:text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{title}</p>
+                    <p className="text-xs text-gray-500">{desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">{title}</p>
-                  <p className="text-xs text-gray-500">{desc}</p>
-                </div>
-              </motion.div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
+        </div>
+      </section>
+
+      {/* ===== INFINITE MARQUEE — brand values ticker ===== */}
+      <section className="bg-brand-gradient text-white overflow-hidden border-y border-white/10">
+        <div className="flex animate-marquee whitespace-nowrap py-3">
+          {[...Array(2)].map((_, dupIdx) => (
+            <div key={dupIdx} className="flex items-center gap-10 px-5 text-sm font-semibold uppercase tracking-widest">
+              {[
+                { icon: Gift, text: '100% Genuine Products' },
+                { icon: Truck, text: 'Free Shipping Above ₹999' },
+                { icon: Award, text: 'Handpicked Collections' },
+                { icon: Zap, text: 'Flash Sales Every Week' },
+                { icon: ShieldCheck, text: 'Secure COD Orders' },
+                { icon: Sparkles, text: 'New Arrivals Daily' },
+              ].map(({ icon: Icon, text }, i) => (
+                <span key={`${dupIdx}-${i}`} className="inline-flex items-center gap-2 opacity-90">
+                  <Icon className="w-4 h-4" />
+                  {text}
+                  <span className="ml-10 opacity-50">✦</span>
+                </span>
+              ))}
+            </div>
+          ))}
         </div>
       </section>
 
@@ -586,30 +643,36 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* ===== TESTIMONIAL / STATS ===== */}
-      <section className="bg-gray-50 border-y border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 py-14">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      {/* ===== ANIMATED STATS ===== */}
+      <section className="relative bg-gray-50 border-y border-gray-100 overflow-hidden">
+        {/* Soft floating blobs behind stats */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-brand-gradient opacity-10 rounded-full blur-3xl animate-float-slow" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-flash-gradient opacity-10 rounded-full blur-3xl animate-float" />
+        <div className="relative max-w-7xl mx-auto px-4 py-14">
+          <Stagger className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center" staggerChildren={0.12}>
             {[
-              { num: '50K+', label: 'Happy Customers' },
-              { num: '10K+', label: 'Products' },
-              { num: '500+', label: 'Cities Served' },
-              { num: '4.8★', label: 'Customer Rating' },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <p className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  {stat.num}
-                </p>
-                <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
-              </motion.div>
+              { end: 50000, suffix: '+', label: 'Happy Customers', icon: Heart },
+              { end: 10000, suffix: '+', label: 'Products',        icon: Tag },
+              { end: 500,   suffix: '+', label: 'Cities Served',   icon: MapPin },
+              { end: 4.8,   suffix: '★', label: 'Customer Rating', icon: Star, float: true },
+            ].map((stat) => (
+              <StaggerItem key={stat.label}>
+                <div className="group relative bg-white/60 backdrop-blur-sm border border-white/60 rounded-2xl p-5 hover-lift cursor-default">
+                  <div className="flex justify-center mb-2">
+                    <div className="w-10 h-10 rounded-full bg-brand-gradient flex items-center justify-center shadow-md group-hover:scale-110 group-hover:rotate-[-8deg] transition-transform duration-300">
+                      <stat.icon className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                  <p className="text-3xl md:text-4xl font-extrabold text-brand-gradient-anim">
+                    {stat.float
+                      ? <span>{stat.end}{stat.suffix}</span>
+                      : <CountUp end={stat.end} suffix={stat.suffix} duration={1.8} />}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1 font-medium">{stat.label}</p>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
     </div>

@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Download, XCircle, Loader2, Package, Truck, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Download, XCircle, Loader2, Package, Truck, CheckCircle, Clock, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useOrderStore from '../../store/orderStore';
 import { downloadBill } from '../../utils/downloadBill';
+import ReviewForm from '../../components/reviews/ReviewForm';
+import api from '../../services/api';
 
 const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
 
@@ -27,10 +29,32 @@ const statusColors = {
 export default function OrderDetailPage() {
   const { id } = useParams();
   const { currentOrder: order, loading, fetchOrderById, cancelOrder } = useOrderStore();
+  const [reviewedProductIds, setReviewedProductIds] = useState(new Set());
+  const [reviewingProduct, setReviewingProduct] = useState(null);
 
   useEffect(() => {
     fetchOrderById(id);
   }, [id, fetchOrderById]);
+
+  // Fetch which products in this order are already reviewed by the user
+  useEffect(() => {
+    if (!order || order.status !== 'delivered') return;
+    const fetchReviewed = async () => {
+      try {
+        const res = await api.get('/reviews/mine');
+        const myReviews = res.data?.data ?? res.data ?? [];
+        const ids = new Set(
+          myReviews
+            .filter((r) => String(r.order) === String(order._id) || String(r.order?._id) === String(order._id))
+            .map((r) => String(r.product?._id || r.product))
+        );
+        setReviewedProductIds(ids);
+      } catch {
+        // silently fail
+      }
+    };
+    fetchReviewed();
+  }, [order]);
 
   const handleCancel = async () => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
@@ -39,6 +63,14 @@ export default function OrderDetailPage() {
     } catch {
       // handled by store
     }
+  };
+
+  const handleReviewSuccess = (productId) => {
+    setReviewedProductIds((prev) => {
+      const next = new Set(prev);
+      next.add(String(productId));
+      return next;
+    });
   };
 
   if (loading || !order) {
@@ -50,6 +82,7 @@ export default function OrderDetailPage() {
   }
 
   const isCancelled = order.status === 'cancelled';
+  const isDelivered = order.status === 'delivered';
   const canCancel = ['pending', 'confirmed'].includes(order.status);
   const currentStatusIdx = ORDER_STATUSES.indexOf(order.status);
 
@@ -136,26 +169,56 @@ export default function OrderDetailPage() {
         <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Items</h2>
           <div className="divide-y">
-            {order.items?.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-4 py-4">
-                <div className="w-16 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                  <img
-                    src={item.product?.images?.[0]?.url || item.product?.images?.[0] || item.image || '/placeholder.png'}
-                    alt={item.product?.name || item.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900">{item.product?.name || item.name}</p>
-                  <div className="flex gap-2 text-sm text-gray-500">
-                    {item.size && <span>Size: {item.size}</span>}
-                    {item.color && <span>Color: {item.color}</span>}
-                    <span>Qty: {item.quantity}</span>
+            {order.items?.map((item, idx) => {
+              const productId = item.product?._id || item.product;
+              const productName = item.product?.name || item.name;
+              const productImage =
+                item.product?.images?.[0]?.url || item.product?.images?.[0] || item.image || '/placeholder.png';
+              const alreadyReviewed = reviewedProductIds.has(String(productId));
+              return (
+                <div key={idx} className="flex items-center gap-4 py-4">
+                  <div className="w-16 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                    <img src={productImage} alt={productName} className="w-full h-full object-cover" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900">{productName}</p>
+                    <div className="flex gap-2 text-sm text-gray-500">
+                      {item.size && <span>Size: {item.size}</span>}
+                      {item.color && <span>Color: {item.color}</span>}
+                      <span>Qty: {item.quantity}</span>
+                    </div>
+                    {isDelivered && productId && (
+                      <div className="mt-2">
+                        {alreadyReviewed ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-full">
+                            <CheckCircle className="w-3 h-3" />
+                            Reviewed
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              setReviewingProduct({
+                                productId,
+                                productName,
+                                productImage,
+                                orderId: order._id,
+                              })
+                            }
+                            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-1 rounded-full transition"
+                          >
+                            <Star className="w-3 h-3" />
+                            Write Review
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <p className="font-bold text-gray-900">
+                    ₹{item.subtotal ?? (item.pricePerPiece ?? 0) * item.quantity}
+                  </p>
                 </div>
-                <p className="font-bold text-gray-900">₹{item.subtotal ?? (item.pricePerPiece ?? 0) * item.quantity}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -218,6 +281,18 @@ export default function OrderDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Review modal */}
+      {reviewingProduct && (
+        <ReviewForm
+          productId={reviewingProduct.productId}
+          orderId={reviewingProduct.orderId}
+          productName={reviewingProduct.productName}
+          productImage={reviewingProduct.productImage}
+          onClose={() => setReviewingProduct(null)}
+          onSuccess={() => handleReviewSuccess(reviewingProduct.productId)}
+        />
+      )}
     </div>
   );
 }

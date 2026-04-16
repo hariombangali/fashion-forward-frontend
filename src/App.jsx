@@ -1,6 +1,7 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useAuthStore } from './store/authStore';
 
 // Layouts
@@ -11,6 +12,9 @@ import RouteLoader from './components/common/RouteLoader';
 import AnnouncementBar from './components/common/AnnouncementBar';
 import LiveNotifications from './components/common/LiveNotifications';
 import FloatingContact from './components/common/FloatingContact';
+import ScrollProgressBar from './components/common/ScrollProgressBar';
+import ScrollToTop from './components/common/ScrollToTop';
+import PageTransition from './components/common/PageTransition';
 import useSettingsStore from './store/settingsStore';
 import ThemeApplicator from './components/common/ThemeApplicator';
 import AdminLayout from './pages/admin/AdminLayout';
@@ -59,49 +63,39 @@ import AdminThemePage from './pages/admin/AdminThemePage';
 import AdminCouponsPage from './pages/admin/AdminCouponsPage';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 
-// Customer/Public Layout wrapper
+// Customer/Public Layout wrapper — main content gets page transition
 function PublicLayout({ children }) {
   return (
     <div className="min-h-screen flex flex-col">
       <AnnouncementBar />
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <PageTransition>{children}</PageTransition>
+      </main>
       <Footer />
       <MobileBottomNav />
       <LiveNotifications />
       <FloatingContact />
+      <ScrollToTop />
     </div>
   );
 }
 
-function App() {
-  const { fetchUser, token } = useAuthStore();
-  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
-
+// Scroll to top on route change (complements smooth scroll, jumps on navigate)
+function ScrollRestorer() {
+  const location = useLocation();
   useEffect(() => {
-    if (token) {
-      fetchUser();
-    }
-    // Load store settings (announcement, flash sale, contact info, theme)
-    fetchSettings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  }, [location.pathname]);
+  return null;
+}
 
+// Animated routes wrapper — needs to be inside Router to use useLocation
+function AnimatedRoutes() {
+  const location = useLocation();
   return (
-    <Router>
-      <RouteLoader />
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: { background: '#1a365d', color: '#fff', borderRadius: '10px' },
-          success: { style: { background: '#059669' } },
-          error: { style: { background: '#dc2626' } },
-        }}
-      />
-
-      <ThemeApplicator />
-      <Routes>
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
         {/* Auth Routes (no navbar/footer) */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
@@ -124,7 +118,7 @@ function App() {
           </ProtectedRoute>
         } />
 
-        {/* Protected Customer Routes — any logged-in user can access */}
+        {/* Protected Customer Routes */}
         <Route path="/checkout" element={
           <ProtectedRoute>
             <PublicLayout><CheckoutPage /></PublicLayout>
@@ -189,6 +183,40 @@ function App() {
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </AnimatePresence>
+  );
+}
+
+function App() {
+  const { fetchUser, token } = useAuthStore();
+  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
+
+  useEffect(() => {
+    if (token) {
+      fetchUser();
+    }
+    // Load store settings (announcement, flash sale, contact info, theme)
+    fetchSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  return (
+    <Router>
+      <RouteLoader />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: { background: '#1a365d', color: '#fff', borderRadius: '10px' },
+          success: { style: { background: '#059669' } },
+          error: { style: { background: '#dc2626' } },
+        }}
+      />
+
+      <ThemeApplicator />
+      <ScrollProgressBar />
+      <ScrollRestorer />
+      <AnimatedRoutes />
     </Router>
   );
 }

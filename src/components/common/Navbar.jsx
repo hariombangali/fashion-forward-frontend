@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Heart, ShoppingCart, User, ChevronDown,
   LogOut, Package, LayoutDashboard, X, Menu,
@@ -24,10 +25,23 @@ const Navbar = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [cartBump, setCartBump] = useState(false);
 
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
   const suggestAbortRef = useRef(null);
+  const prevCount = useRef(itemCount);
+
+  // Bounce cart when count increases
+  useEffect(() => {
+    if (itemCount > prevCount.current) {
+      setCartBump(true);
+      const t = setTimeout(() => setCartBump(false), 700);
+      prevCount.current = itemCount;
+      return () => clearTimeout(t);
+    }
+    prevCount.current = itemCount;
+  }, [itemCount]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -415,24 +429,37 @@ const Navbar = () => {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`relative flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-[0.08em] transition-colors duration-200 group ${
+                  className={`relative flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-[0.08em] transition-colors duration-200 group py-1 ${
                     isActive(link.to)
                       ? 'text-indigo-600'
                       : 'text-gray-600 hover:text-indigo-600'
                   }`}
                 >
-                  {link.label}
+                  <span className="relative z-10 transition-transform duration-200 group-hover:-translate-y-0.5 inline-block">
+                    {link.label}
+                  </span>
                   {link.badge && (
-                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-pink-500 text-white uppercase tracking-wide leading-none">
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.2 }}
+                      className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-flash-gradient text-white uppercase tracking-wide leading-none animate-bounce-subtle"
+                    >
                       {link.badge}
-                    </span>
+                    </motion.span>
                   )}
-                  {/* Animated underline */}
-                  <span
-                    className={`absolute -bottom-1 left-0 h-[2px] rounded-full bg-gradient-to-r from-indigo-600 to-pink-500 transition-all duration-300 ease-out ${
-                      isActive(link.to) ? 'w-full' : 'w-0 group-hover:w-full'
-                    }`}
-                  />
+                  {/* Sliding underline — shared across active links via layoutId */}
+                  {isActive(link.to) && (
+                    <motion.span
+                      layoutId="nav-underline"
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      className="absolute -bottom-1 left-0 right-0 h-[2px] rounded-full bg-brand-gradient"
+                    />
+                  )}
+                  {/* Hover underline grows from left */}
+                  {!isActive(link.to) && (
+                    <span className="absolute -bottom-1 left-0 h-[2px] rounded-full bg-brand-gradient w-0 group-hover:w-full transition-all duration-300 ease-out" />
+                  )}
                 </Link>
               ))}
             </div>
@@ -473,12 +500,27 @@ const Navbar = () => {
                 className="hidden md:flex p-2.5 rounded-full text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200 relative"
                 aria-label="Cart"
               >
-                <ShoppingCart className="w-5 h-5" />
-                {itemCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-pink-500 text-[9px] font-extrabold text-white shadow shadow-indigo-300 ring-2 ring-white">
-                    {itemCount > 99 ? '99+' : itemCount}
-                  </span>
-                )}
+                <motion.span
+                  animate={cartBump ? { scale: [1, 1.4, 1], rotate: [0, -12, 10, 0] } : {}}
+                  transition={{ duration: 0.5 }}
+                  className="inline-block"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                </motion.span>
+                <AnimatePresence>
+                  {itemCount > 0 && (
+                    <motion.span
+                      key="cart-badge"
+                      initial={{ scale: 0 }}
+                      animate={cartBump ? { scale: [1, 1.5, 1] } : { scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={{ type: 'spring', stiffness: 420, damping: 18 }}
+                      className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-gradient text-[9px] font-extrabold text-white shadow ring-2 ring-white"
+                    >
+                      {itemCount > 99 ? '99+' : itemCount}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </Link>
 
               {/* User dropdown — desktop */}

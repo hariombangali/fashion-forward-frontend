@@ -88,16 +88,262 @@
   .page-container { @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6; }
 }
 
-/* ── Scrollbar ──────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 8px; }
+/* ══════════════════════════════════════════════════════════════════
+   GLOBAL TAILWIND OVERRIDES — redirect hardcoded indigo/purple utilities
+   to the admin's chosen theme colors.
+   This way the entire existing codebase (which uses bg-indigo-600,
+   text-indigo-600, etc. everywhere) follows the theme without rewrites.
+══════════════════════════════════════════════════════════════════ */
+
+/* Primary color family — maps to --color-primary */
+.bg-indigo-500, .bg-indigo-600, .bg-indigo-700,
+.bg-purple-600, .bg-violet-600 {
+  background-color: var(--color-primary) !important;
+}
+.hover\:bg-indigo-500:hover, .hover\:bg-indigo-600:hover, .hover\:bg-indigo-700:hover,
+.hover\:bg-purple-600:hover, .hover\:bg-violet-700:hover {
+  background-color: var(--color-primary-hover) !important;
+}
+.text-indigo-500, .text-indigo-600, .text-indigo-700,
+.text-purple-600, .text-violet-600 {
+  color: var(--color-primary) !important;
+}
+.hover\:text-indigo-600:hover, .hover\:text-indigo-700:hover {
+  color: var(--color-primary-hover) !important;
+}
+.border-indigo-500, .border-indigo-600, .border-indigo-700,
+.border-purple-600 {
+  border-color: var(--color-primary) !important;
+}
+.ring-indigo-500, .ring-indigo-600,
+.focus\:ring-indigo-500:focus, .focus\:ring-indigo-600:focus {
+  --tw-ring-color: var(--color-primary) !important;
+}
+.focus\:border-indigo-500:focus, .focus\:border-indigo-600:focus {
+  border-color: var(--color-primary) !important;
+}
+
+/* Lighter primary tints (for backgrounds like bg-indigo-50, bg-indigo-100) —
+   synthesize a translucent primary */
+.bg-indigo-50  { background-color: color-mix(in srgb, var(--color-primary) 8%, white) !important; }
+.bg-indigo-100 { background-color: color-mix(in srgb, var(--color-primary) 16%, white) !important; }
+
+/* Accent color family — pink/rose/fuchsia/orange map to --color-accent */
+.bg-pink-500, .bg-pink-600, .bg-rose-500, .bg-fuchsia-500, .bg-orange-500 {
+  background-color: var(--color-accent) !important;
+}
+.hover\:bg-pink-600:hover, .hover\:bg-rose-600:hover, .hover\:bg-orange-600:hover {
+  background-color: var(--color-accent-hover) !important;
+}
+.text-pink-500, .text-pink-600, .text-rose-500, .text-orange-500 {
+  color: var(--color-accent) !important;
+}
+
+/* ── FONT OVERRIDES ── */
+/* Tailwind's font-sans and default html font should use our body font.
+   Force these globally so theme fonts actually apply. */
+html, body,
+.font-sans {
+  font-family: var(--font-body) !important;
+}
+.font-serif {
+  font-family: var(--font-heading) !important;
+}
+h1, h2, h3, h4, h5, h6,
+.font-heading {
+  font-family: var(--font-heading) !important;
+}
+
+/* ── Smooth scroll + offset for anchor links ────────────────────── */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Scrollbar (branded) ────────────────────────────────────────── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+::-webkit-scrollbar-thumb {
+  background-image: var(--gradient-brand);
+  border-radius: 10px;
+  border: 2px solid #f1f5f9;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  border-width: 1px;
+}
 
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ── Global animation keyframes & utilities ─────────────────────── */
+@keyframes ff-shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+@keyframes ff-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-18px) rotate(3deg); }
+}
+@keyframes ff-float-slow {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  50%      { transform: translateY(-24px) translateX(10px); }
+}
+@keyframes ff-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+@keyframes ff-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 45%, transparent); }
+  70%  { box-shadow: 0 0 0 20px color-mix(in srgb, var(--color-primary) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent); }
+}
+@keyframes ff-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes ff-bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+@keyframes ff-wiggle {
+  0%, 100% { transform: rotate(0); }
+  25%      { transform: rotate(-6deg); }
+  75%      { transform: rotate(6deg); }
+}
+@keyframes ff-burst {
+  0%   { transform: scale(0.6); opacity: 0; }
+  50%  { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes ff-blob {
+  0%, 100% { border-radius: 42% 58% 68% 32% / 47% 36% 64% 53%; }
+  33%      { border-radius: 61% 39% 33% 67% / 52% 64% 36% 48%; }
+  66%      { border-radius: 37% 63% 52% 48% / 38% 52% 48% 62%; }
+}
+
+.animate-float       { animation: ff-float 6s ease-in-out infinite; }
+.animate-float-slow  { animation: ff-float-slow 10s ease-in-out infinite; }
+.animate-pulse-ring  { animation: ff-pulse-ring 2.2s cubic-bezier(0.66, 0, 0, 1) infinite; }
+.animate-marquee     { animation: ff-marquee 30s linear infinite; }
+.animate-bounce-subtle { animation: ff-bounce-subtle 1.6s ease-in-out infinite; }
+.animate-wiggle      { animation: ff-wiggle 0.6s ease-in-out; }
+.animate-blob        { animation: ff-blob 14s ease-in-out infinite; }
+
+.shimmer-bg {
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 40%, #f1f5f9 80%);
+  background-size: 1000px 100%;
+  animation: ff-shimmer 1.6s linear infinite;
+}
+html.dark .shimmer-bg {
+  background: linear-gradient(90deg, #1e293b 0%, #334155 40%, #1e293b 80%);
+  background-size: 1000px 100%;
+}
+
+/* Animated gradient background — combine with .bg-brand-gradient for fluid hero */
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: ff-gradient-shift 10s ease infinite;
+}
+
+/* Hover lift — subtle motion on cards */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -20px color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+/* Magnetic button — soft glow on hover */
+.btn-magnetic {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.btn-magnetic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
+               rgba(255,255,255,0.35) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.btn-magnetic:hover::before { opacity: 1; }
+.btn-magnetic:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 30px -10px color-mix(in srgb, var(--color-primary) 60%, transparent);
+}
+.btn-magnetic:active { transform: translateY(0) scale(0.98); }
+
+/* Ripple effect helper */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+.ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.5) 10%, transparent 10.01%);
+  transform: scale(10);
+  opacity: 0;
+  transition: transform 0.5s, opacity 1s;
+}
+.ripple:active::after {
+  transform: scale(0);
+  opacity: 0.3;
+  transition: 0s;
+}
+
+/* Scroll-snap helpers for carousels */
+.snap-x-smooth {
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+.snap-item { scroll-snap-align: start; }
+
+/* Soft glow used on hero CTA */
+.glow-primary {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 30%, transparent),
+              0 10px 40px -10px color-mix(in srgb, var(--color-primary) 60%, transparent);
+}
+
+/* Gradient text helper with animated shift */
+.text-brand-gradient-anim {
+  background-image: var(--gradient-brand);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ff-gradient-shift 6s ease infinite;
+}
+
+/* Reveal-on-scroll class (used by IntersectionObserver fallback) */
+.reveal-init { opacity: 0; transform: translateY(24px); }
+.reveal-in   { opacity: 1; transform: translateY(0); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Selection color uses brand */
+::selection {
+  background-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  color: inherit;
+}
 
 
 /* ══════════════════════════════════════════════════════════════════

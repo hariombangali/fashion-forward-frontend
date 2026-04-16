@@ -10,6 +10,7 @@ import useAuthStore from '../../store/authStore';
 import api from '../../services/api';
 import { FullPageLoader } from '../../components/common/Loader';
 import { addToRecentlyViewed } from '../../utils/recentlyViewed';
+import ReviewsSection from '../../components/reviews/ReviewsSection';
 
 const TABS = ['Description', 'Size Guide', 'Reviews'];
 
@@ -397,9 +398,7 @@ export default function ProductDetailPage() {
               </div>
             )}
             {activeTab === 'Reviews' && (
-              <div className="text-gray-500">
-                <p>No reviews yet. Be the first to review this product!</p>
-              </div>
+              <ReviewsSection productId={product._id} />
             )}
           </div>
         </div>

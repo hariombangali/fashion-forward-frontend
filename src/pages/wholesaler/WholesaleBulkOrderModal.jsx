@@ -11,10 +11,15 @@ const WholesaleBulkOrderModal = ({ product, onClose }) => {
   const moq = product?.wholesaleMOQ || 10;
   const tiers = product?.wholesaleTiers || [];
 
+  // Normalize: colors can be strings or objects {name, hex, images, _id}
+  const colorOptions = colors.map((c) =>
+    typeof c === 'string' ? { name: c, hex: null } : { name: c.name, hex: c.hex, _id: c._id }
+  );
+
   const [quantities, setQuantities] = useState(
     sizes.reduce((acc, size) => ({ ...acc, [size]: 0 }), {})
   );
-  const [selectedColor, setSelectedColor] = useState(colors[0] || '');
+  const [selectedColor, setSelectedColor] = useState(colorOptions[0]?.name || '');
   const [submitting, setSubmitting] = useState(false);
 
   const totalQuantity = useMemo(
@@ -28,7 +33,7 @@ const WholesaleBulkOrderModal = ({ product, onClose }) => {
     return sorted.find((t) => totalQuantity >= t.minQty) || null;
   }, [tiers, totalQuantity]);
 
-  const unitPrice = activeTier?.price || 0;
+  const unitPrice = activeTier?.pricePerPiece || 0;
   const subtotal = totalQuantity * unitPrice;
   const meetsMOQ = totalQuantity >= moq;
 
@@ -129,7 +134,7 @@ const WholesaleBulkOrderModal = ({ product, onClose }) => {
                           style: 'currency',
                           currency: 'INR',
                           maximumFractionDigits: 0,
-                        }).format(tier.price)}
+                        }).format(tier.pricePerPiece)}
                         /pc
                       </span>
                     </div>
@@ -140,23 +145,29 @@ const WholesaleBulkOrderModal = ({ product, onClose }) => {
           )}
 
           {/* Color Selection */}
-          {colors.length > 1 && (
+          {colorOptions.length > 1 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Color
               </label>
               <div className="flex flex-wrap gap-2">
-                {colors.map((color) => (
+                {colorOptions.map((color) => (
                   <button
-                    key={color}
-                    onClick={() => setSelectedColor(color)}
-                    className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
-                      selectedColor === color
+                    key={color._id || color.name}
+                    onClick={() => setSelectedColor(color.name)}
+                    className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                      selectedColor === color.name
                         ? 'border-gray-900 bg-gray-900 text-white'
                         : 'border-gray-300 text-gray-700 hover:border-gray-400'
                     }`}
                   >
-                    {color}
+                    {color.hex && (
+                      <span
+                        className="inline-block h-3.5 w-3.5 rounded-full border border-black/10 flex-shrink-0"
+                        style={{ backgroundColor: color.hex }}
+                      />
+                    )}
+                    {color.name}
                   </button>
                 ))}
               </div>
@@ -220,7 +231,7 @@ const WholesaleBulkOrderModal = ({ product, onClose }) => {
                     style: 'currency',
                     currency: 'INR',
                     maximumFractionDigits: 0,
-                  }).format(activeTier.price)}
+                  }).format(activeTier.pricePerPiece)}
                   /pc
                 </span>
               </div>
