@@ -10,6 +10,17 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useAdminStore from '../../store/adminStore';
+import {
+  RevenueAreaChart,
+  OrdersBarChart,
+  StatusDistributionPie,
+  UserTypeDonut,
+  TopProductsBar,
+  CategorySalesBar,
+  MonthlyRevenueLine,
+  NewUsersChart,
+  PaymentBreakdownPie,
+} from '../../components/admin/charts/AnalyticsCharts';
 
 function getDefaultDates() {
   const to = new Date();
@@ -22,14 +33,28 @@ function getDefaultDates() {
 }
 
 export default function AdminReportsPage() {
-  const { salesReport, lowStockProducts, fetchSalesReport, fetchLowStock, loading } = useAdminStore();
+  const {
+    salesReport,
+    lowStockProducts,
+    analytics,
+    fetchSalesReport,
+    fetchLowStock,
+    fetchAnalytics,
+    loading,
+  } = useAdminStore();
   const [dateRange, setDateRange] = useState(getDefaultDates);
   const [reportLoading, setReportLoading] = useState(false);
+  const [analyticsDays, setAnalyticsDays] = useState(30);
 
   useEffect(() => {
     loadReport();
     fetchLowStock();
+    fetchAnalytics(analyticsDays);
   }, []);
+
+  useEffect(() => {
+    fetchAnalytics(analyticsDays);
+  }, [analyticsDays]);
 
   const loadReport = async () => {
     setReportLoading(true);
@@ -74,9 +99,54 @@ export default function AdminReportsPage() {
   const totalOrders = report.reduce((acc, d) => acc + (d.orders || 0), 0);
   const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
 
+  const a = analytics || {};
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900">Reports</h2>
+      <h2 className="text-xl font-bold text-gray-900">Reports & Analytics</h2>
+
+      {/* Analytics window selector */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h3 className="text-base font-semibold text-gray-700">Visual Analytics</h3>
+        <div className="inline-flex bg-white rounded-lg shadow-sm p-1">
+          {[7, 30, 90, 365].map((d) => (
+            <button
+              key={d}
+              onClick={() => setAnalyticsDays(d)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                analyticsDays === d
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {d === 365 ? '1Y' : `${d}D`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Analytics charts grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RevenueAreaChart data={a.dailySales} />
+        <OrdersBarChart data={a.dailySales} />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StatusDistributionPie data={a.statusDistribution} />
+        <UserTypeDonut data={a.userTypeSplit} />
+        <PaymentBreakdownPie data={a.paymentBreakdown} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TopProductsBar data={a.topProducts} />
+        <CategorySalesBar data={a.categorySales} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MonthlyRevenueLine data={a.monthlyTrend} />
+        <NewUsersChart data={a.newCustomersMonthly} />
+      </div>
+
+      <div className="border-t border-gray-200 pt-6">
+        <h3 className="text-base font-semibold text-gray-700 mb-4">Sales Report (Date Range)</h3>
+      </div>
 
       {/* Date Range */}
       <div className="bg-white rounded-xl shadow-sm p-5">

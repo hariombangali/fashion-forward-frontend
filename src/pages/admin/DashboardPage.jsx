@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ShoppingBag,
@@ -8,55 +8,35 @@ import {
   Bell,
   Plus,
   ArrowRight,
-  Eye
+  Eye,
+  Users,
+  Store,
+  TrendingUp,
 } from 'lucide-react';
 import useAdminStore from '../../store/adminStore';
+import {
+  RevenueAreaChart,
+  OrdersBarChart,
+  StatusDistributionPie,
+  UserTypeDonut,
+  TopProductsBar,
+  CategorySalesBar,
+  MonthlyRevenueLine,
+  NewUsersChart,
+  PaymentBreakdownPie,
+} from '../../components/admin/charts/AnalyticsCharts';
 
-function KPICard({ icon: Icon, label, value, color, bgColor }) {
+function KPICard({ icon: Icon, label, value, color, bgColor, trend }) {
   return (
     <div className="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
       <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${bgColor}`}>
         <Icon size={22} className={color} />
       </div>
-      <div>
-        <p className="text-sm text-gray-500">{label}</p>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-gray-500 truncate">{label}</p>
         <p className="text-2xl font-bold text-gray-900">{value}</p>
+        {trend && <p className="text-xs text-gray-400 mt-0.5">{trend}</p>}
       </div>
-    </div>
-  );
-}
-
-function SalesChart({ dailySales = [] }) {
-  const last7 = dailySales.slice(-7);
-  const maxRevenue = Math.max(...last7.map((d) => d.revenue || 0), 1);
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-5">
-      <h3 className="text-base font-semibold text-gray-800 mb-4">Sales - Last 7 Days</h3>
-      {last7.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">No sales data available</p>
-      ) : (
-        <div className="flex items-end gap-2 h-48">
-          {last7.map((day, idx) => {
-            const height = Math.max((day.revenue / maxRevenue) * 100, 4);
-            return (
-              <div key={idx} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-xs text-gray-500 font-medium">
-                  {'\u20B9'}{day.revenue >= 1000 ? `${(day.revenue / 1000).toFixed(1)}k` : day.revenue}
-                </span>
-                <div
-                  className="w-full bg-blue-500 rounded-t-md transition-all duration-500 min-w-[20px]"
-                  style={{ height: `${height}%` }}
-                  title={`${day.orders} orders, \u20B9${day.revenue}`}
-                />
-                <span className="text-xs text-gray-400 mt-1 truncate w-full text-center">
-                  {new Date(day.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
@@ -70,56 +50,83 @@ const statusColors = {
   cancelled: 'bg-red-100 text-red-700',
 };
 
+const RANGE_OPTIONS = [
+  { label: '7D', days: 7 },
+  { label: '30D', days: 30 },
+  { label: '90D', days: 90 },
+  { label: '1Y', days: 365 },
+];
+
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { dashboardStats, allOrders, fetchDashboard, fetchAllOrders, loading } = useAdminStore();
+  const {
+    dashboardStats,
+    allOrders,
+    analytics,
+    fetchDashboard,
+    fetchAllOrders,
+    fetchAnalytics,
+    loading,
+  } = useAdminStore();
+  const [rangeDays, setRangeDays] = useState(30);
 
   useEffect(() => {
     fetchDashboard();
     fetchAllOrders({ limit: 10, sort: '-createdAt' });
   }, []);
 
+  useEffect(() => {
+    fetchAnalytics(rangeDays);
+  }, [rangeDays]);
+
   const stats = dashboardStats || {};
   const recentOrders = (allOrders || []).slice(0, 10);
+  const a = analytics || {};
+  const summary = a.summary || {};
 
-  if (loading && !stats.todayOrders && recentOrders.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl shadow-sm p-5 animate-pulse">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-lg" />
-                <div className="space-y-2">
-                  <div className="h-3 w-20 bg-gray-200 rounded" />
-                  <div className="h-6 w-16 bg-gray-200 rounded" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-5 animate-pulse">
-          <div className="h-48 bg-gray-100 rounded" />
-        </div>
-      </div>
-    );
-  }
+  const formatINR = (v) =>
+    `\u20B9${(v || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+
+  const initialLoading = loading && !stats.todaysOrders && !analytics;
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Analytics Dashboard</h2>
+          <p className="text-sm text-gray-500">Real-time performance overview</p>
+        </div>
+        <div className="inline-flex bg-white rounded-lg shadow-sm p-1">
+          {RANGE_OPTIONS.map((opt) => (
+            <button
+              key={opt.days}
+              onClick={() => setRangeDays(opt.days)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                rangeDays === opt.days
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Top KPI row — from dashboard endpoint */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
           icon={ShoppingBag}
           label="Today's Orders"
-          value={stats.todayOrders || 0}
+          value={stats.todaysOrders || 0}
           color="text-blue-600"
           bgColor="bg-blue-50"
         />
         <KPICard
           icon={IndianRupee}
           label="Today's Revenue"
-          value={`\u20B9${(stats.todayRevenue || 0).toLocaleString('en-IN')}`}
+          value={formatINR(stats.todaysRevenue)}
           color="text-green-600"
           bgColor="bg-green-50"
         />
@@ -133,13 +140,45 @@ export default function DashboardPage() {
         <KPICard
           icon={AlertTriangle}
           label="Low Stock Items"
-          value={stats.lowStockCount || 0}
+          value={stats.lowStockProducts || 0}
           color="text-red-600"
           bgColor="bg-red-50"
         />
       </div>
 
-      {/* Pending Applications Banner */}
+      {/* Secondary KPI row — from analytics endpoint */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard
+          icon={TrendingUp}
+          label={`Revenue (${rangeDays}d)`}
+          value={formatINR(summary.totalRevenue)}
+          color="text-emerald-600"
+          bgColor="bg-emerald-50"
+        />
+        <KPICard
+          icon={ShoppingBag}
+          label={`Orders (${rangeDays}d)`}
+          value={summary.totalOrders || 0}
+          color="text-indigo-600"
+          bgColor="bg-indigo-50"
+        />
+        <KPICard
+          icon={IndianRupee}
+          label="Avg Order Value"
+          value={formatINR(summary.avgOrderValue)}
+          color="text-purple-600"
+          bgColor="bg-purple-50"
+        />
+        <KPICard
+          icon={Users}
+          label="Customers / Wholesalers"
+          value={`${stats.totalCustomers || 0} / ${stats.totalWholesalers || 0}`}
+          color="text-pink-600"
+          bgColor="bg-pink-50"
+        />
+      </div>
+
+      {/* Pending applications banner */}
       {stats.pendingApplications > 0 && (
         <div
           className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-amber-100 transition-colors"
@@ -148,15 +187,52 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <Bell size={20} className="text-amber-600" />
             <span className="text-sm font-medium text-amber-800">
-              {stats.pendingApplications} pending wholesaler application{stats.pendingApplications > 1 ? 's' : ''} awaiting review
+              {stats.pendingApplications} pending wholesaler application
+              {stats.pendingApplications > 1 ? 's' : ''} awaiting review
             </span>
           </div>
           <ArrowRight size={18} className="text-amber-600" />
         </div>
       )}
 
-      {/* Sales Chart */}
-      <SalesChart dailySales={stats.dailySales} />
+      {/* Loading skeleton */}
+      {initialLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-xl shadow-sm p-5 animate-pulse">
+              <div className="h-4 w-40 bg-gray-200 rounded mb-4" />
+              <div className="h-64 bg-gray-100 rounded" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          {/* Row 1: Revenue area + Orders bar */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <RevenueAreaChart data={a.dailySales} />
+            <OrdersBarChart data={a.dailySales} />
+          </div>
+
+          {/* Row 2: Status pie + UserType donut + Payment pie */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <StatusDistributionPie data={a.statusDistribution} />
+            <UserTypeDonut data={a.userTypeSplit} />
+            <PaymentBreakdownPie data={a.paymentBreakdown} />
+          </div>
+
+          {/* Row 3: Top products + Category sales */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TopProductsBar data={a.topProducts} />
+            <CategorySalesBar data={a.categorySales} />
+          </div>
+
+          {/* Row 4: Monthly trend + New users */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <MonthlyRevenueLine data={a.monthlyTrend} />
+            <NewUsersChart data={a.newCustomersMonthly} />
+          </div>
+        </>
+      )}
 
       {/* Recent Orders */}
       <div className="bg-white rounded-xl shadow-sm">
@@ -258,6 +334,13 @@ export default function DashboardPage() {
         >
           <ShoppingBag size={16} />
           View All Orders
+        </button>
+        <button
+          onClick={() => navigate('/admin/reports')}
+          className="flex items-center gap-2 px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+        >
+          <TrendingUp size={16} />
+          Detailed Reports
         </button>
       </div>
     </div>

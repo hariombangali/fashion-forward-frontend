@@ -13,6 +13,7 @@ const useAdminStore = create((set) => ({
   applications: [],
   salesReport: [],
   lowStockProducts: [],
+  analytics: null,
   loading: false,
 
   fetchDashboard: async () => {
@@ -161,6 +162,19 @@ const useAdminStore = create((set) => ({
     } catch (error) {
       set({ loading: false });
       toast.error(error.response?.data?.message || 'Failed to fetch sales report');
+    }
+  },
+
+  fetchAnalytics: async (days = 30) => {
+    try {
+      set({ loading: true });
+      const { data } = await api.get('/admin/analytics', { params: { days } });
+      const p = unwrap(data);
+      set({ analytics: p, loading: false });
+      return p;
+    } catch (error) {
+      set({ loading: false });
+      toast.error(error.response?.data?.message || 'Failed to fetch analytics');
     }
   },
 
